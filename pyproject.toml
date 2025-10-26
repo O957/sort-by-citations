@@ -1,10 +1,10 @@
 [project]
 name = "sort-by-citations"
-version = "0.1.0"
+version = "0.0.1"
 authors = [
   {name = "O957", email = "127630341+O957@users.noreply.github.com"},
 ]
-description = "Simple web app to find top cited papers by keyword using OpenAlex"
+description = "Streamlit application which uses the OpenAlex API (via pyalex) to find the top N academic resources by citation count for researcher or keyword searches."
 license = "Apache-2.0"
 readme = "README.md"
 keywords = ["citations", "academic", "search", "openalex", "streamlit"]
@@ -21,14 +21,5 @@ Repository = "https://github.com/O957/sort-by-citations"
 Issues = "https://github.com/O957/sort-by-citations/issues"
 "Author GitHub" = "https://github.com/O957"
 
-[project.optional-dependencies]
-flask = []
-test = [
-    "pytest>=8.4.0",
-]
-
 [tool.ruff.lint.mccabe]
 max-complexity = 15
-
-[tool.deptry]
-pep621_dev_dependency_groups = ["dev", "test"]
