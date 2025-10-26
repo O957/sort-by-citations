@@ -1,15 +1,19 @@
 # Citation Search Web App
 
-A simple, lightweight Streamlit application to find the most cited academic papers by keyword using the OpenAlex API.
+A simple, lightweight Streamlit application to find the most cited academic papers by keyword or author using the OpenAlex API.
 
 ## Features
 
+- **Dual search modes** - Search by keyword or author name
 - **Simple interface** - Clean Streamlit design with sidebar filters
 - **Powerful search** - Search 250M+ papers from OpenAlex
+- **Author disambiguation** - Shows author affiliation and metrics to help identify the correct person
 - **Advanced filters** - Filter by year range, citation count, and open access status
-- **Download results** - Export as TXT (titles or full data) or CSV
+- **Download results** - Export as TXT (titles or full data) or CSV with static filenames
+- **HTML rendering** - Properly displays italics and superscripts in paper titles
 - **Polite pool access** - Add your email for better performance
 - **No API key needed** - OpenAlex is free and open
+- **Local assets** - All fonts and content stored locally for faster loading
 
 ## Quick Start
 
@@ -36,14 +40,18 @@ The app will automatically open in your browser at `http://localhost:8501`
 
 1. **Enter your email** (optional) in the sidebar for polite pool access
 2. **Set filters** in the sidebar:
-   - Number of results (10-100)
+   - Number of results (5-100)
    - Min/Max year
    - Minimum citations
    - Open access only
-3. **Enter a keyword** (e.g., "machine learning", "CRISPR", "climate change")
-4. **Click "Search"**
-5. **Browse results** sorted by citation count
-6. **Download results** as TXT or CSV
+3. **Choose search mode**: Keyword or Author
+4. **Enter your search**:
+   - Keyword: e.g., "machine learning", "CRISPR", "climate change"
+   - Author: e.g., "Albert Einstein", "Marie Curie"
+5. **Click "Search"**
+6. **Browse results** sorted by citation count
+   - For author searches, view author info (affiliation, total works, citations, ORCID)
+7. **Download results** as TXT or CSV
 
 ## Technology Stack
 
@@ -109,8 +117,14 @@ services:
 ```
 sort-by-citations/
 ├── streamlit_app.py    # main streamlit application
-├── app.py              # archived flask version
-├── templates/          # archived flask templates
+├── assets/
+│   ├── content/        # markdown content files
+│   │   ├── about_openalex.md
+│   │   ├── api_comparison.md
+│   │   ├── repository_info.md
+│   │   └── search_tips.md
+│   └── fonts/          # local font files
+│       └── BebasNeue-Regular.ttf
 ├── pyproject.toml      # project dependencies (uv)
 ├── requirements.txt    # dependencies for streamlit cloud
 ├── .streamlit/
@@ -118,23 +132,27 @@ sort-by-citations/
 └── README.md           # this file
 ```
 
-## Archived Flask Version
+## API Usage
 
-The original Flask version is archived in this repository:
-- `app.py` - Flask backend
-- `templates/index.html` - HTML/JS frontend
-
-To run the Flask version:
-```bash
-uv sync --extra flask
-uv run python3 app.py
-```
+**NOTE:** This application uses the OpenAlex polite pool system when an email is provided. The app is designed to be respectful to the OpenAlex API by:
+- Using the polite pool for better, more consistent performance
+- Sending your email to OpenAlex so they can contact you if needed
+- Following OpenAlex's rate limiting guidelines
 
 ## Acknowledgments
 
 - **OpenAlex** - Free, open API for scholarly data
 - **pyalex** - Python wrapper for OpenAlex API
-- **clipboard2markdown** - Inspiration for simple, clean design
+- **Streamlit** - Web framework for data applications
+
+## Contributing
+
+Contributions are welcome! Here's how you can help:
+
+- **Report issues** - Found a bug or have a feature request? [Open an issue](https://github.com/O957/sort-by-citations/issues)
+- **Submit pull requests** - Have a fix or improvement? [Create a pull request](https://github.com/O957/sort-by-citations/pulls)
+- **Join discussions** - Share ideas and provide feedback in [Discussions](https://github.com/O957/sort-by-citations/discussions)
+- **Contact** - Email me at: [my github username]+[@]+[pro]+[ton]+[.]+[me]
 
 ## License
 

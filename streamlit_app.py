@@ -1,17 +1,61 @@
 """
-Streamlit web application to find top cited papers using 
-OpenAlex. This application provides an interface for 
-searching the most cited academic papers by keyword or 
+Streamlit web application to find top cited papers using
+OpenAlex. This application provides an interface for
+searching the most cited academic papers by keyword or
 author using the OpenAlex API (via pyalex).
 """
 
+import base64
 import os
 from datetime import datetime
+from pathlib import Path
 
 import polars as pl
 import requests
 import streamlit as st
 from pyalex import Authors, Works, config
+
+
+def load_markdown_content(filename: str) -> str:
+    """
+    load markdown content from assets/content directory.
+
+    Parameters
+    ----------
+    filename : str
+        name of the markdown file to load
+
+    Returns
+    -------
+    str
+        content of the markdown file, or empty string if file not found
+    """
+    content_path = Path(__file__).parent / "assets" / "content" / filename
+    if content_path.exists():
+        return content_path.read_text()
+    return ""
+
+
+def load_font_base64(font_path: str) -> str:
+    """
+    load font file and encode as base64 for CSS embedding.
+
+    Parameters
+    ----------
+    font_path : str
+        path to the font file
+
+    Returns
+    -------
+    str
+        base64 encoded font data
+    """
+
+    font_file = Path(__file__).parent / font_path
+    if font_file.exists():
+        return base64.b64encode(font_file.read_bytes()).decode()
+    return ""
+
 
 # page configuration
 st.set_page_config(
@@ -303,21 +347,39 @@ Rate Limit: **{limit}** requests/sec | Remaining: **{remaining}**
 
 
 # main app layout
-st.markdown(
-    """
+# load custom font
+bebas_font_base64 = load_font_base64("assets/fonts/BebasNeue-Regular.ttf")
+font_css = (
+    f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-.custom-title {
+@font-face {{
+    font-family: 'Bebas Neue';
+    src: url(data:font/ttf;base64,{bebas_font_base64}) format('truetype');
+}}
+.custom-title {{
     font-family: 'Bebas Neue', sans-serif;
     font-size: 3.5rem;
     color: #0d6efd;
     margin-bottom: 0.5rem;
-}
+}}
 </style>
 <div class="custom-title">Citation Search</div>
-""",
-    unsafe_allow_html=True,
+"""
+    if bebas_font_base64
+    else """
+<style>
+.custom-title {{
+    font-family: sans-serif;
+    font-size: 3.5rem;
+    color: #0d6efd;
+    margin-bottom: 0.5rem;
+}}
+</style>
+<div class="custom-title">Citation Search</div>
+"""
 )
+
+st.markdown(font_css, unsafe_allow_html=True)
 st.markdown("Find the most cited academic papers by keyword using OpenAlex")
 
 # sidebar for email and filters
@@ -446,21 +508,9 @@ if st.button("🔍 Search", type="primary", use_container_width=True):
 
 # search tips
 with st.expander("💡 Search Tips", expanded=False):
-    st.markdown("""
-    **Keyword Search:**
-    - Use quotes for exact phrases: `"machine learning"`.
-    - More specific keywords = narrower, more relevant results.
-
-    **Author Search:**
-    - Enter the author's full name (e.g., "Albert Einstein").
-    - The top matching author by works count will be selected.
-    - Author affiliation is shown to help with disambiguation.
-
-    **General:**
-    - Use year filters to focus on recent breakthroughs or historical work.
-    - Set minimum citations to find highly influential papers.
-    - Enable "Open Access" to find papers you can read immediately.
-    """)
+    search_tips_content = load_markdown_content("search_tips.md")
+    if search_tips_content:
+        st.markdown(search_tips_content)
 
 # display results
 if st.session_state.search_results is not None:
@@ -611,61 +661,21 @@ if st.session_state.search_results is not None:
 
 # information section
 with st.expander("ℹ️ About OpenAlex API Access", expanded=False):
-    st.markdown("""
-    ### About OpenAlex API Access
-
-    This application uses the free [OpenAlex API](https://openalex.org) to search over 250 million academic papers. No API key is required.
-
-    #### Why API Rate Limits Matter
-
-    OpenAlex uses a two-tier system to ensure fair access for all users. Here's what you need to know:
-
-    > The OpenAlex API doesn't require authentication. However, it is helpful for us to know who's behind each API call, for two reasons:
-    >
-    > 1. It allows us to get in touch with the user if something's gone wrong--for instance, their script has run amok and we've needed to start blocking or throttling their usage.
-    >
-    > 2. It lets us report back to our funders, which helps us keep the lights on.
-    >
-    > Like Crossref (whose approach we are shamelessly stealing), we separate API users into two pools, the **polite pool** and the **common pool**. The polite pool has more consistent response times. It's where you want to be.
-    >
-    > To get into the polite pool, you just have to give us an email where we can contact you. You can give us this email in one of two ways:
-    >
-    > 1. Add the `mailto=you@example.com` parameter in your API request, like this: `https://api.openalex.org/works?mailto=you@example.com`
-    >
-    > 2. Add `mailto:you@example.com` somewhere in your User-Agent request header.
-    >
-    > Source: [OpenAlex API Documentation](https://docs.openalex.org/how-to-use-the-api/rate-limits-and-authentication)
-
-    #### For This Application
-
-    Simply enter your email in the sidebar to access the "polite pool" with faster, more consistent response times. Your email is only sent to OpenAlex and stored in your browser session.
-    """)
+    about_content = load_markdown_content("about_openalex.md")
+    if about_content:
+        st.markdown(about_content)
 
 # comparison section
 with st.expander("📊 Comparing Citation Search APIs", expanded=False):
-    st.markdown("""
-    ### OpenAlex vs CrossRef vs Google Scholar
+    comparison_content = load_markdown_content("api_comparison.md")
+    if comparison_content:
+        st.markdown(comparison_content)
 
-    #### [OpenAlex](https://openalex.org)
-    - **Coverage**: 250M+ works across all disciplines.
-    - **API Access**: Free, no API key required.
-    - **Rate Limits**: Polite pool (with email) gets better performance.
-    - **Data Quality**: Open source, includes citation counts, author info, institutions.
-    - **Documentation**: [OpenAlex Docs](https://docs.openalex.org).
-
-    #### [CrossRef](https://www.crossref.org)
-    - **Coverage**: 140M+ works with DOIs (mainly published articles).
-    - **API Access**: Free, no API key required.
-    - **Rate Limits**: Polite pool system (same as OpenAlex).
-    - **Data Quality**: High quality metadata, DOI authority, extensive publisher data.
-    - **Documentation**: [CrossRef API Docs](https://www.crossref.org/documentation/retrieve-metadata/rest-api/).
-
-    #### [Google Scholar](https://scholar.google.com)
-    - **Coverage**: Largest index (exact size unknown, estimated 400M+).
-    - **API Access**: No official API (scraping violates Terms of Service).
-    - **Rate Limits**: N/A - no official API.
-    - **Data Quality**: Broadest coverage but includes preprints, theses, patents.
-    """)
+# repository and contributing section
+with st.expander("🔗 Repository & Contributing", expanded=False):
+    repository_content = load_markdown_content("repository_info.md")
+    if repository_content:
+        st.markdown(repository_content)
 
 # footer
 st.divider()
