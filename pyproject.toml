@@ -1,21 +1,31 @@
 [project]
-name = "baseline-template-change"
-version = "0.0.1"
+name = "sort-by-citations"
+version = "0.1.0"
 authors = [
   {name = "O957", email = "127630341+O957@users.noreply.github.com"},
 ]
-description = "A template I find useful for setting up Python and R repositories."
+description = "Simple web app to find top cited papers by keyword using OpenAlex"
 license = "Apache-2.0"
 readme = "README.md"
-keywords = ["design-patterns", "template", "standards"]
-requires-python = ">=3.13"
+keywords = ["citations", "academic", "search", "openalex", "streamlit"]
+requires-python = ">=3.10"
+dependencies = [
+    "streamlit>=1.30.0",
+    "pyalex>=0.13",
+    "polars>=0.20.0",
+    "requests>=2.31.0",
+]
 
 [project.urls]
-Repository = "https://github.com/O957/O957-Template"
-Issues = "https://github.com/O957/O957-Template/issues"
+Repository = "https://github.com/O957/sort-by-citations"
+Issues = "https://github.com/O957/sort-by-citations/issues"
 "Author GitHub" = "https://github.com/O957"
 
 [project.optional-dependencies]
+flask = [
+    "flask>=3.0.0",
+    "gunicorn>=21.0.0",
+]
 test = [
     "pytest>=8.4.0",
 ]
