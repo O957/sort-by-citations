@@ -18,17 +18,17 @@ from pyalex import Authors, Works, config
 
 def load_markdown_content(filename: str) -> str:
     """
-    load markdown content from assets/content directory.
+    Load markdown content from assets/content directory.
 
     Parameters
     ----------
     filename : str
-        name of the markdown file to load
+        Name of the markdown file to load.
 
     Returns
     -------
     str
-        content of the markdown file, or empty string if file not found
+        Content of the markdown file, or empty string if file not found.
     """
     content_path = Path(__file__).parent / "assets" / "content" / filename
     if content_path.exists():
@@ -38,17 +38,17 @@ def load_markdown_content(filename: str) -> str:
 
 def load_font_base64(font_path: str) -> str:
     """
-    load font file and encode as base64 for CSS embedding.
+    Load font file and encode as base64 for CSS embedding.
 
     Parameters
     ----------
     font_path : str
-        path to the font file
+        Path to the font file.
 
     Returns
     -------
     str
-        base64 encoded font data
+        Base64 encoded font data.
     """
 
     font_file = Path(__file__).parent / font_path
@@ -80,17 +80,17 @@ if "search_type" not in st.session_state:
 
 def get_openalex_rate_limit_info(user_email: str | None = None) -> dict:
     """
-    make a test request to OpenAlex to get rate limit headers.
+    Make a test request to OpenAlex to get rate limit headers.
 
     Parameters
     ----------
     user_email : str | None
-        user email for polite pool
+        User email for polite pool.
 
     Returns
     -------
     dict
-        rate limit information from OpenAlex headers
+        Rate limit information from OpenAlex headers.
     """
     email = user_email or os.environ.get(
         "OPENALEX_EMAIL", "research@example.com"
@@ -127,17 +127,17 @@ def get_openalex_rate_limit_info(user_email: str | None = None) -> dict:
 
 def extract_paper_info(work: dict) -> dict:
     """
-    extract relevant fields from a work object.
+    Extract relevant fields from a work object.
 
     Parameters
     ----------
     work : dict
-        work object from OpenAlex API
+        Work object from OpenAlex API.
 
     Returns
     -------
     dict
-        extracted paper information
+        Extracted paper information.
     """
     authors = [
         authorship.get("author", {}).get("display_name", "Unknown")
@@ -172,29 +172,29 @@ def search_papers(
     user_email: str | None = None,
 ) -> list[dict]:
     """
-    search OpenAlex for top cited papers by keyword.
+    Search OpenAlex for top cited papers by keyword.
 
     Parameters
     ----------
     keyword : str
-        search keyword
+        Search keyword.
     limit : int
-        number of results to return
+        Number of results to return.
     min_year : int | None
-        minimum publication year
+        Minimum publication year.
     max_year : int | None
-        maximum publication year
+        Maximum publication year.
     min_citations : int | None
-        minimum citation count
+        Minimum citation count.
     open_access_only : bool
-        only return open access papers
+        Only return open access papers.
     user_email : str | None
-        user email for polite pool access
+        User email for polite pool access.
 
     Returns
     -------
     list[dict]
-        list of paper dicts
+        List of paper dicts.
     """
     # set email for this request
     if user_email:
@@ -240,29 +240,29 @@ def search_papers_by_author(
     user_email: str | None = None,
 ) -> tuple[list[dict], dict | None]:
     """
-    search OpenAlex for top cited papers by author name.
+    Search OpenAlex for top cited papers by author name.
 
     Parameters
     ----------
     author_name : str
-        author name to search for
+        Author name to search for.
     limit : int
-        number of results to return
+        Number of results to return.
     min_year : int | None
-        minimum publication year
+        Minimum publication year.
     max_year : int | None
-        maximum publication year
+        Maximum publication year.
     min_citations : int | None
-        minimum citation count
+        Minimum citation count.
     open_access_only : bool
-        only return open access papers
+        Only return open access papers.
     user_email : str | None
-        user email for polite pool access
+        User email for polite pool access.
 
     Returns
     -------
     tuple[list[dict], dict | None]
-        list of paper dicts and author info dict (or None if not found)
+        List of paper dicts and author info dict (or None if not found).
     """
     # set email for this request
     if user_email:
@@ -322,7 +322,7 @@ def search_papers_by_author(
 
 
 def display_pool_status(rate_limit_info: dict):
-    """display the pool status based on rate limit info."""
+    """Display the pool status based on rate limit info."""
     if not rate_limit_info:
         return
 
