@@ -22,10 +22,7 @@ Issues = "https://github.com/O957/sort-by-citations/issues"
 "Author GitHub" = "https://github.com/O957"
 
 [project.optional-dependencies]
-flask = [
-    "flask>=3.0.0",
-    "gunicorn>=21.0.0",
-]
+flask = []
 test = [
     "pytest>=8.4.0",
 ]

@@ -1,4 +1,0 @@
-streamlit>=1.30.0
-pyalex>=0.13
-polars>=0.20.0
-requests>=2.31.0

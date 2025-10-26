@@ -1,24 +1,24 @@
 """
-Streamlit web application to find top cited papers using OpenAlex.
-
-This application provides an interface for searching the most cited
-academic papers by keyword using the OpenAlex API.
+Streamlit web application to find top cited papers using 
+OpenAlex. This application provides an interface for 
+searching the most cited academic papers by keyword or 
+author using the OpenAlex API (via pyalex).
 """
 
-import streamlit as st
-from pyalex import Works, config
-import requests
-import polars as pl
-from datetime import datetime
 import os
+from datetime import datetime
 
+import polars as pl
+import requests
+import streamlit as st
+from pyalex import Authors, Works, config
 
 # page configuration
 st.set_page_config(
     page_title="Citation Search",
     page_icon="📚",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # initialize session state
@@ -28,6 +28,10 @@ if "search_results" not in st.session_state:
     st.session_state.search_results = None
 if "rate_limit_info" not in st.session_state:
     st.session_state.rate_limit_info = None
+if "author_info" not in st.session_state:
+    st.session_state.author_info = None
+if "search_type" not in st.session_state:
+    st.session_state.search_type = "keyword"
 
 
 def get_openalex_rate_limit_info(user_email: str | None = None) -> dict:
@@ -44,7 +48,9 @@ def get_openalex_rate_limit_info(user_email: str | None = None) -> dict:
     dict
         rate limit information from OpenAlex headers
     """
-    email = user_email or os.environ.get("OPENALEX_EMAIL", "research@example.com")
+    email = user_email or os.environ.get(
+        "OPENALEX_EMAIL", "research@example.com"
+    )
 
     url = "https://api.openalex.org/works"
     params = {"per-page": 1, "mailto": email}
@@ -53,20 +59,25 @@ def get_openalex_rate_limit_info(user_email: str | None = None) -> dict:
         response = requests.get(url, params=params, timeout=5)
         headers = response.headers
 
-        limit = headers.get("ratelimit-limit", headers.get("x-ratelimit-limit", "unknown"))
-        remaining = headers.get("ratelimit-remaining", headers.get("x-ratelimit-remaining", "unknown"))
+        limit = headers.get(
+            "ratelimit-limit", headers.get("x-ratelimit-limit", "unknown")
+        )
+        remaining = headers.get(
+            "ratelimit-remaining",
+            headers.get("x-ratelimit-remaining", "unknown"),
+        )
 
         return {
             "rate_limit_limit": limit,
             "rate_limit_remaining": remaining,
             "email_used": email,
-            "has_email": bool(user_email)
+            "has_email": bool(user_email),
         }
     except Exception as e:
         return {
             "error": str(e),
             "email_used": email,
-            "has_email": bool(user_email)
+            "has_email": bool(user_email),
         }
 
 
@@ -103,13 +114,19 @@ def extract_paper_info(work: dict) -> dict:
         "doi": work.get("doi"),
         "url": work.get("doi") if work.get("doi") else None,
         "open_access": open_access_data.get("is_oa", False),
-        "source": source.get("display_name", "Unknown")
+        "source": source.get("display_name", "Unknown"),
     }
 
 
-def search_papers(keyword: str, limit: int = 25, min_year: int | None = None,
-                  max_year: int | None = None, min_citations: int | None = None,
-                  open_access_only: bool = False, user_email: str | None = None) -> list[dict]:
+def search_papers(
+    keyword: str,
+    limit: int = 25,
+    min_year: int | None = None,
+    max_year: int | None = None,
+    min_citations: int | None = None,
+    open_access_only: bool = False,
+    user_email: str | None = None,
+) -> list[dict]:
     """
     search OpenAlex for top cited papers by keyword.
 
@@ -154,7 +171,9 @@ def search_papers(keyword: str, limit: int = 25, min_year: int | None = None,
 
     # sort by citations and get results
     fetch_limit = limit * 3 if min_citations else limit
-    results = query.sort(cited_by_count="desc").get(per_page=min(fetch_limit, 200))
+    results = query.sort(cited_by_count="desc").get(
+        per_page=min(fetch_limit, 200)
+    )
 
     # extract information from all works
     papers = [extract_paper_info(work) for work in results]
@@ -165,6 +184,97 @@ def search_papers(keyword: str, limit: int = 25, min_year: int | None = None,
 
     # return only requested number
     return papers[:limit]
+
+
+def search_papers_by_author(
+    author_name: str,
+    limit: int = 25,
+    min_year: int | None = None,
+    max_year: int | None = None,
+    min_citations: int | None = None,
+    open_access_only: bool = False,
+    user_email: str | None = None,
+) -> tuple[list[dict], dict | None]:
+    """
+    search OpenAlex for top cited papers by author name.
+
+    Parameters
+    ----------
+    author_name : str
+        author name to search for
+    limit : int
+        number of results to return
+    min_year : int | None
+        minimum publication year
+    max_year : int | None
+        maximum publication year
+    min_citations : int | None
+        minimum citation count
+    open_access_only : bool
+        only return open access papers
+    user_email : str | None
+        user email for polite pool access
+
+    Returns
+    -------
+    tuple[list[dict], dict | None]
+        list of paper dicts and author info dict (or None if not found)
+    """
+    # set email for this request
+    if user_email:
+        config.email = user_email
+    else:
+        config.email = os.environ.get("OPENALEX_EMAIL", "research@example.com")
+
+    # search for the author
+    author_results = Authors().search(author_name).get(per_page=1)
+
+    if not author_results:
+        return [], None
+
+    # get the top matching author
+    author = author_results[0]
+    author_id = author.get("id")
+
+    # extract author info for display
+    author_info = {
+        "display_name": author.get("display_name", "Unknown"),
+        "works_count": author.get("works_count", 0),
+        "cited_by_count": author.get("cited_by_count", 0),
+        "last_known_institution": author.get("last_known_institution", {}).get(
+            "display_name"
+        )
+        if author.get("last_known_institution")
+        else None,
+        "orcid": author.get("orcid"),
+    }
+
+    # build query for this author's works
+    query = Works().filter(author={"id": author_id})
+
+    # apply filters
+    if min_year:
+        query = query.filter(from_publication_date=f"{min_year}-01-01")
+    if max_year:
+        query = query.filter(to_publication_date=f"{max_year}-12-31")
+    if open_access_only:
+        query = query.filter(is_oa=True)
+
+    # sort by citations and get results
+    fetch_limit = limit * 3 if min_citations else limit
+    results = query.sort(cited_by_count="desc").get(
+        per_page=min(fetch_limit, 200)
+    )
+
+    # extract information from all works
+    papers = [extract_paper_info(work) for work in results]
+
+    # apply client-side citation filter if needed
+    if min_citations:
+        papers = [p for p in papers if p["citations"] >= min_citations]
+
+    # return only requested number
+    return papers[:limit], author_info
 
 
 def display_pool_status(rate_limit_info: dict):
@@ -193,7 +303,8 @@ Rate Limit: **{limit}** requests/sec | Remaining: **{remaining}**
 
 
 # main app layout
-st.markdown("""
+st.markdown(
+    """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 .custom-title {
@@ -204,7 +315,9 @@ st.markdown("""
 }
 </style>
 <div class="custom-title">Citation Search</div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 st.markdown("Find the most cited academic papers by keyword using OpenAlex")
 
 # sidebar for email and filters
@@ -217,7 +330,7 @@ with st.sidebar:
         "Your email for polite pool",
         value=st.session_state.user_email,
         placeholder="your@email.com",
-        help="Provide your email for faster, more consistent response times"
+        help="Provide your email for faster, more consistent response times",
     )
     if user_email != st.session_state.user_email:
         st.session_state.user_email = user_email
@@ -230,9 +343,7 @@ with st.sidebar:
     st.subheader("🔍 Filters")
 
     limit = st.selectbox(
-        "Number of Results",
-        options=[5, 10, 25, 50, 100],
-        index=1
+        "Number of Results", options=[5, 10, 25, 50, 100], index=1
     )
 
     col1, col2 = st.columns(2)
@@ -242,7 +353,7 @@ with st.sidebar:
             min_value=1900,
             max_value=2025,
             value=None,
-            placeholder="1900"
+            placeholder="1900",
         )
     with col2:
         max_year = st.number_input(
@@ -250,50 +361,85 @@ with st.sidebar:
             min_value=1900,
             max_value=2025,
             value=None,
-            placeholder="2025"
+            placeholder="2025",
         )
 
     min_citations = st.number_input(
-        "Min Citations",
-        min_value=0,
-        value=None,
-        placeholder="e.g., 100"
+        "Min Citations", min_value=0, value=None, placeholder="e.g., 100"
     )
 
     open_access = st.checkbox("Open Access Only")
 
 # main search area
-keyword = st.text_input(
-    "Search Keyword",
-    placeholder="e.g., machine learning, CRISPR, climate change"
+search_type = st.radio(
+    "Search by:",
+    options=["Keyword", "Author"],
+    horizontal=True,
+    key="search_type_radio",
 )
+
+if search_type == "Keyword":
+    search_input = st.text_input(
+        "Search Keyword",
+        placeholder="e.g., machine learning, CRISPR, climate change",
+        key="keyword_input",
+    )
+else:
+    search_input = st.text_input(
+        "Author Name",
+        placeholder="e.g., Albert Einstein, Marie Curie",
+        key="author_input",
+    )
 
 # search button
 if st.button("🔍 Search", type="primary", use_container_width=True):
-    if not keyword:
-        st.error("Please enter a search keyword")
+    if not search_input:
+        st.error(
+            f"Please enter a {'search keyword' if search_type == 'Keyword' else 'author name'}"
+        )
     else:
         with st.spinner("Searching OpenAlex..."):
             try:
-                # perform search
-                papers = search_papers(
-                    keyword=keyword,
-                    limit=limit,
-                    min_year=min_year,
-                    max_year=max_year,
-                    min_citations=min_citations,
-                    open_access_only=open_access,
-                    user_email=st.session_state.user_email if st.session_state.user_email else None
-                )
+                if search_type == "Keyword":
+                    # perform keyword search
+                    papers = search_papers(
+                        keyword=search_input,
+                        limit=limit,
+                        min_year=min_year,
+                        max_year=max_year,
+                        min_citations=min_citations,
+                        open_access_only=open_access,
+                        user_email=st.session_state.user_email
+                        if st.session_state.user_email
+                        else None,
+                    )
+                    st.session_state.author_info = None
+                else:
+                    # perform author search
+                    papers, author_info = search_papers_by_author(
+                        author_name=search_input,
+                        limit=limit,
+                        min_year=min_year,
+                        max_year=max_year,
+                        min_citations=min_citations,
+                        open_access_only=open_access,
+                        user_email=st.session_state.user_email
+                        if st.session_state.user_email
+                        else None,
+                    )
+                    st.session_state.author_info = author_info
 
                 # get rate limit info
                 rate_limit_info = get_openalex_rate_limit_info(
-                    st.session_state.user_email if st.session_state.user_email else None
+                    st.session_state.user_email
+                    if st.session_state.user_email
+                    else None
                 )
 
                 # store in session state
                 st.session_state.search_results = papers
                 st.session_state.rate_limit_info = rate_limit_info
+                st.session_state.search_type = search_type
 
             except Exception as e:
                 st.error(f"Search failed: {str(e)}")
@@ -301,11 +447,19 @@ if st.button("🔍 Search", type="primary", use_container_width=True):
 # search tips
 with st.expander("💡 Search Tips", expanded=False):
     st.markdown("""
-    - Use quotes for exact phrases: `"machine learning"`
-    - More specific keywords = narrower, more relevant results
-    - Use year filters to focus on recent breakthroughs or historical work
-    - Set minimum citations to find highly influential papers
-    - Enable "Open Access" to find papers you can read immediately
+    **Keyword Search:**
+    - Use quotes for exact phrases: `"machine learning"`.
+    - More specific keywords = narrower, more relevant results.
+
+    **Author Search:**
+    - Enter the author's full name (e.g., "Albert Einstein").
+    - The top matching author by works count will be selected.
+    - Author affiliation is shown to help with disambiguation.
+
+    **General:**
+    - Use year filters to focus on recent breakthroughs or historical work.
+    - Set minimum citations to find highly influential papers.
+    - Enable "Open Access" to find papers you can read immediately.
     """)
 
 # display results
@@ -316,8 +470,21 @@ if st.session_state.search_results is not None:
     if st.session_state.rate_limit_info:
         display_pool_status(st.session_state.rate_limit_info)
 
-    # results header
-    st.subheader(f"Found {len(papers)} papers for '{keyword}'")
+    # show author info if this was an author search
+    if st.session_state.author_info:
+        author_info = st.session_state.author_info
+        st.info(f"""
+**Author Found:** {author_info["display_name"]}
+**Institution:** {author_info["last_known_institution"] or "Unknown"}
+**Total Works:** {author_info["works_count"]:,} | **Total Citations:** {author_info["cited_by_count"]:,}
+{f"**ORCID:** {author_info['orcid']}" if author_info["orcid"] else ""}
+        """)
+        st.subheader(
+            f"Found {len(papers)} papers by {author_info['display_name']}"
+        )
+    else:
+        # results header for keyword search
+        st.subheader(f"Found {len(papers)} papers")
 
     # download buttons
     if papers:
@@ -326,57 +493,87 @@ if st.session_state.search_results is not None:
         # prepare data for downloads
         df = pl.DataFrame(papers)
 
+        # determine search context for file headers
+        if st.session_state.author_info:
+            search_context = (
+                f"by {st.session_state.author_info['display_name']}"
+            )
+        else:
+            search_context = "Citation Search Results"
+
         # titles only
-        titles_text = f"Top {len(papers)} Papers for '{keyword}'\n"
-        titles_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        titles_text += "\n".join([
-            f"{i+1}. {p['title']} ({p['citations']} citations)"
-            for i, p in enumerate(papers)
-        ])
+        titles_text = f"Top {len(papers)} Papers {search_context}\n"
+        titles_text += (
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        )
+        titles_text += "\n".join(
+            [
+                f"{i + 1}. {p['title']} ({p['citations']} citations)"
+                for i, p in enumerate(papers)
+            ]
+        )
 
         # full text
-        full_text = f"Top {len(papers)} Papers for '{keyword}'\n"
-        full_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        full_text = f"Top {len(papers)} Papers {search_context}\n"
+        full_text += (
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        )
         full_text += "=" * 80 + "\n\n"
         for i, p in enumerate(papers):
-            full_text += f"{i+1}. {p['title']}\n"
+            full_text += f"{i + 1}. {p['title']}\n"
             full_text += f"   Authors: {p['authors']}\n"
             full_text += f"   Year: {p['year'] or 'Unknown'}\n"
             full_text += f"   Citations: {p['citations']}\n"
             full_text += f"   Source: {p['source']}\n"
-            if p['doi']:
+            if p["doi"]:
                 full_text += f"   DOI: {p['doi']}\n"
-            if p['url']:
+            if p["url"]:
                 full_text += f"   URL: {p['url']}\n"
-            full_text += f"   Open Access: {'Yes' if p['open_access'] else 'No'}\n\n"
+            full_text += (
+                f"   Open Access: {'Yes' if p['open_access'] else 'No'}\n\n"
+            )
 
         # csv
         csv_df = df.with_row_index("rank", offset=1)
         csv_df = csv_df.with_columns(
-            pl.col("open_access").map_elements(lambda x: "Yes" if x else "No", return_dtype=pl.String)
+            pl.col("open_access").map_elements(
+                lambda x: "Yes" if x else "No", return_dtype=pl.String
+            )
         )
-        csv_df = csv_df.select(['rank', 'title', 'authors', 'year', 'citations', 'source', 'doi', 'url', 'open_access'])
+        csv_df = csv_df.select(
+            [
+                "rank",
+                "title",
+                "authors",
+                "year",
+                "citations",
+                "source",
+                "doi",
+                "url",
+                "open_access",
+            ]
+        )
 
         with col1:
             st.download_button(
                 "📄 Download Titles (.txt)",
                 data=titles_text,
                 file_name="citation_titles.txt",
-                mime="text/plain"
+                mime="text/plain",
             )
         with col2:
             st.download_button(
                 "📝 Download Full Data (.txt)",
                 data=full_text,
                 file_name="citation_full.txt",
-                mime="text/plain"
+                mime="text/plain",
             )
         with col3:
             st.download_button(
                 "📊 Download Full Data (.csv)",
                 data=csv_df.write_csv(),
                 file_name="citation_papers.csv",
-                mime="text/csv"
+                mime="text/csv",
             )
 
     st.divider()
@@ -387,20 +584,27 @@ if st.session_state.search_results is not None:
             col_main, col_citations = st.columns([4, 1])
 
             with col_main:
-                if paper['url']:
-                    st.markdown(f"**{i}. <a href=\"{paper['url']}\" target=\"_blank\">{paper['title']}</a>**", unsafe_allow_html=True)
+                if paper["url"]:
+                    st.markdown(
+                        f'**{i}. <a href="{paper["url"]}" target="_blank">{paper["title"]}</a>**',
+                        unsafe_allow_html=True,
+                    )
                 else:
-                    st.markdown(f"**{i}. {paper['title']}**", unsafe_allow_html=True)
+                    st.markdown(
+                        f"**{i}. {paper['title']}**", unsafe_allow_html=True
+                    )
 
                 st.caption(f"👥 {paper['authors']}")
-                st.caption(f"📅 {paper['year'] or 'Unknown'} | 📖 {paper['source']}")
+                st.caption(
+                    f"📅 {paper['year'] or 'Unknown'} | 📖 {paper['source']}"
+                )
 
-                if paper['doi']:
+                if paper["doi"]:
                     st.caption(f"🔗 DOI: {paper['doi']}")
 
             with col_citations:
-                st.metric("Citations", paper['citations'])
-                if paper['open_access']:
+                st.metric("Citations", paper["citations"])
+                if paper["open_access"]:
                     st.success("🔓 Open Access")
 
             st.divider()
@@ -465,4 +669,6 @@ with st.expander("📊 Comparing Citation Search APIs", expanded=False):
 
 # footer
 st.divider()
-st.caption("Powered by [OpenAlex](https://openalex.org) | Built with [Streamlit](https://streamlit.io)")
+st.caption(
+    "Powered by [OpenAlex](https://openalex.org) | Built with [Streamlit](https://streamlit.io)"
+)
