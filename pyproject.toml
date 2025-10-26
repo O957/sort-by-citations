@@ -7,7 +7,7 @@ authors = [
 description = "Streamlit application which uses the OpenAlex API (via pyalex) to find the top N academic resources by citation count for researcher or keyword searches."
 license = "Apache-2.0"
 readme = "README.md"
-keywords = ["citations", "academic", "search", "openalex", "streamlit"]
+keywords = ["citations", "academia", "meta-science", "openalex", "streamlit"]
 requires-python = ">=3.10"
 dependencies = [
     "streamlit>=1.30.0",
@@ -20,6 +20,7 @@ dependencies = [
 Repository = "https://github.com/O957/sort-by-citations"
 Issues = "https://github.com/O957/sort-by-citations/issues"
 "Author GitHub" = "https://github.com/O957"
+Website = "https://sort-by-citations.streamlit.app/"
 
 [tool.ruff.lint.mccabe]
 max-complexity = 15
