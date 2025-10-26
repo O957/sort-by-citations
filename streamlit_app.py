@@ -336,13 +336,13 @@ def display_pool_status(rate_limit_info: dict):
 **✓ Polite Pool - Email Sent to OpenAlex**
 Email: `{email}`
 OpenAlex Rate Limit: **{limit}** requests/sec | Remaining: **{remaining}**
-📧 Your email is being sent to OpenAlex for better performance and to help them track usage.
+📧 Your email is going to OpenAlex for better performance.
         """)
     else:
         st.warning(f"""
 **⚠ Common Pool - No Email Provided**
 Rate Limit: **{limit}** requests/sec | Remaining: **{remaining}**
-💡 Add your email in the sidebar to access the polite pool with more consistent response times.
+💡 Add your email (see sidebar) for the polite pool with better response times.
         """)
 
 
@@ -456,9 +456,10 @@ else:
 # search button
 if st.button("🔍 Search", type="primary", use_container_width=True):
     if not search_input:
-        st.error(
-            f"Please enter a {'search keyword' if search_type == 'Keyword' else 'author name'}"
+        error_msg = (
+            "search keyword" if search_type == "Keyword" else "author name"
         )
+        st.error(f"Please enter a {error_msg}")
     else:
         with st.spinner("Searching OpenAlex..."):
             try:
@@ -523,10 +524,12 @@ if st.session_state.search_results is not None:
     # show author info if this was an author search
     if st.session_state.author_info:
         author_info = st.session_state.author_info
+        works_count = author_info["works_count"]
+        citations_count = author_info["cited_by_count"]
         st.info(f"""
 **Author Found:** {author_info["display_name"]}
 **Institution:** {author_info["last_known_institution"] or "Unknown"}
-**Total Works:** {author_info["works_count"]:,} | **Total Citations:** {author_info["cited_by_count"]:,}
+**Total Works:** {works_count:,} | **Total Citations:** {citations_count:,}
 {f"**ORCID:** {author_info['orcid']}" if author_info["orcid"] else ""}
         """)
         st.subheader(
@@ -635,10 +638,11 @@ if st.session_state.search_results is not None:
 
             with col_main:
                 if paper["url"]:
-                    st.markdown(
-                        f'**{i}. <a href="{paper["url"]}" target="_blank">{paper["title"]}</a>**',
-                        unsafe_allow_html=True,
+                    title_link = (
+                        f'**{i}. <a href="{paper["url"]}" '
+                        f'target="_blank">{paper["title"]}</a>**'
                     )
+                    st.markdown(title_link, unsafe_allow_html=True)
                 else:
                     st.markdown(
                         f"**{i}. {paper['title']}**", unsafe_allow_html=True
