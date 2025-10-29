@@ -7,7 +7,7 @@ authors = [
 description = "Streamlit application which uses the OpenAlex API (via pyalex) to find the top N academic resources by citation count for researcher or keyword searches."
 license = "Apache-2.0"
 readme = "README.md"
-keywords = ["citations", "academia", "meta-science", "openalex", "streamlit"]
+keywords = ["citations", "academia", "meta-science", "openalex", "streamlit", "python"]
 requires-python = ">=3.10"
 dependencies = [
     "streamlit>=1.30.0",
