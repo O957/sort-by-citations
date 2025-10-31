@@ -2,9 +2,9 @@
 
 _Streamlit application which uses the OpenAlex API (via pyalex) to find the top N academic resources by citation count for researcher or keyword searches._
 
-> [!NOTE]
+> [!IMPORTANT]
 >
-> The application is live at: <https://sort-by-citations.streamlit.app/>.
+> The application is live at: <https://sort-by-citations.streamlit.app/>. You may need to "wake up" the application, as `streamlit` cloud will shut down the application during periods of inactivity.
 
 ## Features
 
@@ -41,7 +41,7 @@ uv run streamlit run streamlit_app.py
 or just
 
 ```bash
-streamlit run streamlit_app.py`
+streamlit run streamlit_app.py
 ```
 
 Then open your browser to `http://localhost:8501` (paste this in your browser).
