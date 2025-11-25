@@ -701,15 +701,15 @@ wheels = [
 
 [[package]]
 name = "pyalex"
-version = "0.18"
+version = "0.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "requests" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3f/9f/3a67cbe13359441817ca6bee9c0681a11cd0331afef0818349a0690d47e0/pyalex-0.18.tar.gz", hash = "sha256:b71df6e0e104101783a64ecb2b41b24c75059ee4563aa5966499454168bee5e7", size = 46939, upload-time = "2025-03-11T15:39:21.043Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/93/33e42b02326fd8354e61e3a91855e61fed269ec54a1a3ddd2e1ab9ffd246/pyalex-0.19.tar.gz", hash = "sha256:fc4aecc267ffca8483fc9ce676e2c60fdc1890dc962d4582e7b0da417e763cc5", size = 48477, upload-time = "2025-11-13T15:36:19.416Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/3f/b93b7976a43fbeacdb684fe333bb82d926b636f663e75afbbceec8ddc539/pyalex-0.18-py3-none-any.whl", hash = "sha256:16cb0e0b89f7b20370e8a8a217c372d11f9bc2e539f366709aa3a47d97055d4c", size = 13258, upload-time = "2025-03-11T15:39:20.172Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/4c/d0c8cc79f0ffef88a6f24035f82dce69f878ce5fd342e130568b1618585f/pyalex-0.19-py3-none-any.whl", hash = "sha256:8508289c95326a3b1f88a8e59ce96da123f19c2ce6d7f99854b4b1637a3d44ac", size = 14151, upload-time = "2025-11-13T15:36:18.447Z" },
 ]
 
 [[package]]
